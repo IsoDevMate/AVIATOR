@@ -20,9 +20,9 @@ export class AuthController {
 
       const result = await AuthService.register({ email, password, username });
 
-      return res.status(201).json({
+      return res.json({
         message: 'User registered successfully',
-        token: result.token
+        user: result
       });
     } catch (error) {
       if (error instanceof Error) {

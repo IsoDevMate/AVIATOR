@@ -35,9 +35,13 @@ export class AuthService {
   }
 
   public static async validatePassword(password: string): Promise<boolean> {
+    // Password must contain at least one lowercase letter, one uppercase letter, one digit, and be at least 8 characters long
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
     return passwordRegex.test(password);
   }
+
+  // Example of a valid password: "Password123"
+  // This password contains at least one lowercase letter, one uppercase letter, one digit, and is at least 8 characters long
 
   public static async register(data: RegisterDTO) {
     // Check if user exists
@@ -80,10 +84,7 @@ export class AuthService {
       .returning()
       .get();
 
-    // Generate token
-    const token = this.generateToken(newUser.id);
-
-    return { user: newUser, token };
+    return newUser;
   }
 
   public static async login(data: LoginDTO) {
