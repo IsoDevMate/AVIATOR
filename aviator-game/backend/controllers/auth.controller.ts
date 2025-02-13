@@ -1,4 +1,3 @@
-// src/controllers/auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthService, RegisterDTO, LoginDTO } from '../services/auth.service';
 
@@ -66,6 +65,27 @@ export class AuthController {
         }
       }
       next(error);
+    }
+  }
+
+  public static async logout(req: Request, res: Response) {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          message: 'Token is required'
+        });
+      }
+
+      await AuthService.logout({ token });
+
+      // Perform logout operation
+      return res.json({
+        message: 'Logout successful'
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
     }
   }
 }

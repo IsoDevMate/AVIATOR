@@ -13,29 +13,28 @@ export class GameController {
             this.gameService.startGame();
             res.status(200).send({ message: 'Game started successfully' });
         } catch (error) {
-            res.status(500).send({ error: error.message });
+            res.status(500).send({ error: (error as Error).message });
         }
     }
 
-    public placeBet(req: Request, res: Response): void {
+    public async placeBet(req: Request, res: Response): Promise<void> {
         const { playerId, amount, autoMode } = req.body;
-        const result = this.gameService.placeBet(playerId, amount, autoMode);
-
-        if (result.error) {
-            res.status(400).send({ error: result.error });
-        } else {
-            res.status(200).send(result.data);
+        try {
+            const result = await this.gameService.placeBet(playerId, amount, autoMode);
+            res.status(200).send(result)
+        } catch (error) {
+            res.status(400).send({ error: (error as Error).message });
         }
     }
 
-    public handleCashout(req: Request, res: Response): void {
+    public async handleCashout(req: Request, res: Response): Promise<void> {
         const { playerId } = req.body;
-        const result = this.gameService.handleCashout(playerId);
-
-        if (result.error) {
-            res.status(400).send({ error: result.error });
-        } else {
-            res.status(200).send(result.data);
+        try {
+            const result = await this.gameService.handleCashout(playerId);
+            res.status(200).send(result);
+        } catch (error) {
+            res.status(400).send({ error: (error as Error).message });
         }
     }
 }
+

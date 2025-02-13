@@ -21,7 +21,7 @@ export const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    window.location.href = 'http://localhost:3000/api/auth/google';
   };
 
   return (
@@ -35,7 +35,7 @@ export const LoginForm = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error && 'data' in error ? error.data as string : error.message}</div>
+              <div className="text-sm text-red-700">{error && 'data' in error ? error.data as string : 'error' in error ? error.error : 'An unknown error occurred'}</div>
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">

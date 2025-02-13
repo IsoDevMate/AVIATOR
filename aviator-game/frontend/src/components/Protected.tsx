@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.tsx
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAppSelector } from '../app/hooks';
+import { useAppSelector } from '../hooks/hooks';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

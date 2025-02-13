@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery, RootState } from '@reduxjs/toolkit/query/react';
+import { clearAuth } from '../features/auth/authslice';
 
 interface User {
   id: string;
@@ -23,12 +24,15 @@ interface RegisterRequest {
   username: string;
 }
 
+interface LogoutRequest {
+  token: string;
+}
+
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/auth/',
+    baseUrl: 'http://localhost:3000/api/auth', // Updated base URL to include /auth
     prepareHeaders: (headers, { getState }) => {
-      // You can get the token from state if needed
       const token = (getState() as RootState).auth.token;
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
@@ -51,11 +55,23 @@ export const authApi = createApi({
         body: credentials,
       }),
     }),
-    logout: builder.mutation<void, void>({
+    logout: builder.mutation<{ message: string }, void>({
       query: () => ({
         url: 'logout',
         method: 'POST',
+        // Token will be sent automatically in headers
       }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(clearAuth());
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        } catch (error) {
+          console.error('Logout failed:', error);
+          // Optionally show error notification to user
+        }
+      },
     }),
     getCurrentUser: builder.query<User, void>({
       query: () => 'me',

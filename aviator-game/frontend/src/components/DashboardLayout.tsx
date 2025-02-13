@@ -7,23 +7,33 @@ import {
   IconButton,
   Drawer,
 } from "@material-tailwind/react";
-import { useAppDispatch } from '../hooks/hooks';
-import { logout } from '../features/auth/authslice';
-import { useNavigate } from 'react-router-dom';
+import { useLogoutMutation } from '../services/authApi';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [logout, { isLoading }] = useLogoutMutation();
 
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate('/login');
-  };
+ const handleLogout = async () => {
+  try {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
+    await logout({}).unwrap();
+    // Clear local storage after successful logout
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  } catch (err) {
+    console.error('Failed to logout: ', err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -33,15 +43,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             Dashboard
           </Typography>
           <div className="hidden md:flex gap-4">
-            <Button variant="text" onClick={handleLogout} placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}>
-              Logout
+            <Button variant="text"
+              disabled={isLoading} onClick={handleLogout} placeholder="" onPointerEnterCapture={() => { }} onPointerLeaveCapture={() => { }}>
+              {isLoading ? 'Logging out...' : 'Logout'}
             </Button>
           </div>
           <IconButton
             variant="text"
             className="md:hidden"
-                      onClick={() => setIsDrawerOpen(true)}
-                      placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}
+            onClick={() => setIsDrawerOpen(true)}
+            placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -64,22 +75,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       <Drawer
         open={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-              className="p-4"
-              placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}
+        className="p-4"
+        placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}
       >
         <div className="mb-6">
-                  <Typography variant="h5" color="blue-gray"
-                  placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}>
+          <Typography variant="h5" color="blue-gray" placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}>
             Menu
           </Typography>
         </div>
         <Button
           variant="text"
           onClick={handleLogout}
-                  className="w-full justify-start"
-                  placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}
+          disabled={isLoading}
+          className="w-full justify-start"
+          placeholder="" onPointerEnterCapture={() => {}} onPointerLeaveCapture={() => {}}
         >
-          Logout
+           {isLoading ? 'Logging out...' : 'Logout'}
         </Button>
       </Drawer>
 
@@ -94,3 +105,5 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     </div>
   );
 };
+
+export default DashboardLayout;

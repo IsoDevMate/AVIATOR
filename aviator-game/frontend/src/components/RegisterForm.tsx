@@ -1,8 +1,8 @@
 // src/components/RegisterForm.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { register } from '../features/auth/authSlice';
+// import { useAppDispatch, useAppSelector } from '../hooks/hooks';
+import { useRegisterMutation } from '../services/authApi';
 
 export const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -10,20 +10,22 @@ export const RegisterForm = () => {
     password: '',
     username: '',
   });
-  const dispatch = useAppDispatch();
+  // const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const [register, { isLoading, error }] = useRegisterMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await dispatch(register(formData));
-    if (register.fulfilled.match(result)) {
+    try {
+      await register(formData).unwrap();
       navigate('/login');
+    } catch (err) {
+      console.error('Failed to register: ', err);
     }
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    window.location.href = 'http://localhost:3000/api/auth/google';
   };
 
   return (
@@ -37,7 +39,9 @@ export const RegisterForm = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+              <div className="text-sm text-red-700">
+                {error && 'data' in error ? JSON.stringify(error.data) : 'error' in error ? error.error : 'An error occurred'}
+              </div>
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">

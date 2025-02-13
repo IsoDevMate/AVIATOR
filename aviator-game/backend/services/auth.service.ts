@@ -3,7 +3,16 @@ import jwt from 'jsonwebtoken';
 import { db } from '../db/database';
 import { users } from '../models/schema';
 import { eq } from 'drizzle-orm';
-
+import { tokenBlacklist } from '../models/schema';
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  role: 'user' | 'admin' | 'moderator';
+  createdAt: Date;
+  lastLoginAt?: Date;
+  status: 'active' | 'suspended' | 'banned';
+}
 export interface RegisterDTO {
   email: string;
   password: string;
@@ -13,6 +22,15 @@ export interface RegisterDTO {
 export interface LoginDTO {
   email: string;
   password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+export interface LogoutDTO {
+  token: string;
 }
 
 export class AuthService {
@@ -106,5 +124,20 @@ export class AuthService {
     const token = this.generateToken(user.id);
 
     return { user, token };
+  }
+
+  public static async logout(data: LogoutDTO) {
+    // Invalidate the token by adding it to a blacklist or removing it from a whitelist
+    // This example assumes you have a token blacklist table in your database
+
+    await db
+      .insert(tokenBlacklist)
+      .values({
+        token: data.token,
+        expiresAt: new Date()
+      })
+      .execute();
+
+    return { message: 'Logout successful' };
   }
 }

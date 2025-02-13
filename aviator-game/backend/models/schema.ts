@@ -2,8 +2,12 @@ import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { boolean } from 'drizzle-orm/singlestore-core/columns/boolean';
 import { sqliteTable, text, real, integer, unique } from 'drizzle-orm/sqlite-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+``
 
-// models/schema.ts
+export interface tokenBlacklist {
+  token: string;
+  expiresAt: Date;
+}
 export interface User {
   id: string;
   email: string;
@@ -79,6 +83,11 @@ export const transactions = sqliteTable('transactions', {
   amount: real('amount').notNull(),
   status: text('status', { enum: ['pending', 'completed', 'failed'] }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const tokenBlacklist = sqliteTable('token_blacklist', {
+  token: text('token').primaryKey(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
 });
 
 
