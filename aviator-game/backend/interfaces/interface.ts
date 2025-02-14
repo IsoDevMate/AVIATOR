@@ -31,14 +31,40 @@
 //   participants: Map<string, Bet>;
 // }
 
+export interface GameBalance {
+  userId: string;
+  amount: number;
+}
+
+export interface GameParticipant {
+  id: string;
+  username: string;
+  betAmount: number;
+  betStatus: 'active' | 'cashed_out' | 'lost';
+  cashoutMultiplier?: number;
+  winAmount?: number;
+  autoMode?: {
+    enabled: boolean;
+    targetMultiplier: number;
+  };
+}
+
 export interface GameState {
   status: 'betting' | 'flying' | 'crashed';
   currentMultiplier: number;
   crashPoint: number;
   roundId: string;
-  startTime?: Date;
+  startTime: Date;
   endTime?: Date;
-  participants: Map<string, Bet>;
+  participants: Map<string, GameParticipant>;
+  roundHistory: Array<{
+    playerId: string;
+    username: string;
+    cashoutMultiplier: number;
+    betAmount: number;
+    winAmount: number;
+    timestamp: Date;
+  }>;
 }
 
 export interface Bet {
