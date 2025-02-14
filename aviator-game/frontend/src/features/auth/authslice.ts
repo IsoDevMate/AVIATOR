@@ -4,7 +4,9 @@ import { authApi } from '../../services/authApi';
 interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
+  balance?: number;
 }
+
 
 const initialState: AuthState = {
   token: localStorage.getItem('token'),

@@ -36,6 +36,50 @@ export interface GameBalance {
   amount: number;
 }
 
+export interface PendingBet {
+  playerId: string;
+  amount: number;
+  autoMode?: {
+    enabled: boolean;
+    targetMultiplier: number;
+  };
+  timestamp: Date;
+}
+
+export interface GameBet {
+  userId: string;
+  amount: number;
+  autoMode?: {
+    enabled: boolean;
+    targetMultiplier: number;
+  };
+}
+
+export interface GameJoin {
+  userId: string;
+}
+
+export interface GameMessage {
+  type: 'game:join' | 'game:bet' | 'game:balance';
+  data: GameJoin | GameBet | GameBalance;
+}
+
+export interface GameError {
+  message: string;
+  details?: string;
+}
+
+export interface GameBetBroadcast {
+  userId: string;
+  amount: number;
+  timestamp: number;
+}
+
+export interface GameBetError {
+  message: string;
+  details?: string;
+}
+
 export interface GameParticipant {
   id: string;
   username: string;
