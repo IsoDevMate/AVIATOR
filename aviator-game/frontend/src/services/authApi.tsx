@@ -31,7 +31,7 @@ interface LogoutRequest {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000/api/auth', // Updated base URL to include /auth
+    baseUrl: 'http://localhost:3000/api',
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {
@@ -59,7 +59,6 @@ export const authApi = createApi({
       query: () => ({
         url: 'logout',
         method: 'POST',
-        // Token will be sent automatically in headers
       }),
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {

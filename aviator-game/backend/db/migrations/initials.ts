@@ -51,6 +51,23 @@ export async function migrate() {
     );
   `);
 
+  db.run(sql`
+    CREATE INDEX IF NOT EXISTS bets_player_id_index ON bets(player_id);
+  `);
+
+  db.run(sql`
+    CREATE INDEX IF NOT EXISTS transactions_user_id_index ON transactions(user_id);
+  `);
+
+  //Create token_blaist  table
+  db.run(sql`
+    CREATE TABLE IF NOT EXISTS token_blaist (
+      id TEXT PRIMARY KEY,
+      token TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `);
+  
   console.log('Migration completed successfully');
   sqlite.close();
 }

@@ -1,4 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
+import { setTimeout } from 'timers';
+type Timeout = ReturnType<typeof setTimeout>;
 import { RedisClientType } from 'redis';
 import { randomBytes } from 'crypto';
 import { db } from '../db/database';
@@ -13,12 +15,16 @@ type Transaction = InferSelectModel<typeof transactions>;
 export class GameService {
   private static instance: GameService;
   private gameState!: GameState; // Using definite assignment assertion
-  private readonly BETTING_PHASE_DURATION = 5000;
+  private readonly BETTING_PHASE_DURATION = 10000;
   private readonly MIN_BET_AMOUNT = 10;
   private readonly MAX_BET_AMOUNT = 20000;
-  private readonly BASE_GROWTH_RATE = 0.05;
-  private gameLoop: NodeJS.Timer | null = null;
+  private gameLoop: Timeout | null = null;
+  // private gameLoop: NodeJS.Timer | null = null;
   private wss: WebSocketServer;
+  private isGameRunning: boolean = false;
+  private readonly BASE_GROWTH_RATE = 0.1;
+  private gameBalances: Map<string, number> = new Map();
+
 
   private constructor(
     private redisClient: RedisClientType,
@@ -26,15 +32,17 @@ export class GameService {
   ) {
     this.wss = wss;
     this.initializeGame();
+    this.startContinuousGame();
   }
 
-  private initializeGame() {
+    private initializeGame() {
     this.gameState = {
       status: 'betting',
       currentMultiplier: 1.0,
       crashPoint: this.generateCrashPoint(),
       roundId: crypto.randomUUID(),
-      participants: new Map()
+      participants: new Map(),
+      startTime: new Date()
     };
   }
 
@@ -53,40 +61,129 @@ export class GameService {
     return Math.max(1.0, (100 * e - h) / (e - h)) / 100;
   }
 
-  public async startGame() {
-    if (this.gameLoop) {
-      throw new Error('Game already running');
+  // public async startGame() {
+  //   if (this.gameLoop) {
+  //     throw new Error('Game already running');
+  //   }
+
+  //   // Store initial game state in Redis
+  //   await this.redisClient.set(
+  //     `game:${this.gameState.roundId}`,
+  //     JSON.stringify({
+  //       status: this.gameState.status,
+  //       roundId: this.gameState.roundId,
+  //       startTime: new Date()
+  //     }),
+  //     { EX: 3600 }
+  //   );
+
+  //   // Broadcast round start
+  //   this.broadcast('game:round_start', {
+  //     roundId: this.gameState.roundId,
+  //     startTime: new Date(),
+  //     bettingPhase: true
+  //   });
+
+  //   // Start flight phase after betting period
+  //   setTimeout(() => {
+  //     this.gameState.status = 'flying';
+  //     this.gameState.startTime = new Date();
+  //     this.startGameLoop();
+
+  //     this.broadcast('game:flight_start', {
+  //       startTime: this.gameState.startTime
+  //     });
+  //   }, this.BETTING_PHASE_DURATION);
+  // }
+
+   private async startContinuousGame() {
+    if (this.isGameRunning) {
+      console.log('Game is already running');
+      return;
     }
 
-    // Store initial game state in Redis
-    await this.redisClient.set(
-      `game:${this.gameState.roundId}`,
-      JSON.stringify({
-        status: this.gameState.status,
-        roundId: this.gameState.roundId,
-        startTime: new Date()
-      }),
-      { EX: 3600 }
-    );
+    this.isGameRunning = true;
+    console.log('Starting continuous game rounds');
 
-    // Broadcast round start
-    this.broadcast('game:round_start', {
-      roundId: this.gameState.roundId,
-      startTime: new Date(),
-      bettingPhase: true
-    });
+    const runGameRound = async () => {
+      try {
+        // Initialize new round
+        this.initializeGame();
+        console.log(`Starting new round ${this.gameState.roundId} with crash point ${this.gameState.crashPoint}`);
 
-    // Start flight phase after betting period
-    setTimeout(() => {
-      this.gameState.status = 'flying';
-      this.gameState.startTime = new Date();
-      this.startGameLoop();
+        // Store round info in Redis
+        await this.redisClient.set(
+          `game:${this.gameState.roundId}`,
+          JSON.stringify({
+            status: this.gameState.status,
+            roundId: this.gameState.roundId,
+            startTime: this.gameState.startTime
+          }),
+          { EX: 3600 }
+        );
 
-      this.broadcast('game:flight_start', {
-        startTime: this.gameState.startTime
-      });
-    }, this.BETTING_PHASE_DURATION);
+        // Broadcast round start
+        this.broadcast('game:round_start', {
+          roundId: this.gameState.roundId,
+          startTime: this.gameState.startTime,
+          bettingPhase: true
+        });
+
+        // Betting phase
+        await new Promise(resolve => setTimeout(resolve, this.BETTING_PHASE_DURATION));
+
+        // Start flight phase
+        this.gameState.status = 'flying';
+        this.broadcast('game:flight_start', {
+          startTime: new Date()
+        });
+
+        // Run multiplier updates
+        let lastUpdateTime = Date.now();
+        return new Promise<void>((resolve) => {
+          this.gameLoop = setInterval(() => {
+            const currentTime = Date.now();
+            const deltaTime = (currentTime - lastUpdateTime) / 1000;
+            lastUpdateTime = currentTime;
+
+            this.gameState.currentMultiplier *= (1 + this.BASE_GROWTH_RATE * deltaTime);
+
+            if (this.gameState.currentMultiplier >= this.gameState.crashPoint) {
+              if (this.gameLoop) {
+                clearInterval(this.gameLoop);
+                this.gameLoop = null;
+              }
+              resolve();
+              return;
+            }
+
+            this.processAutoCashouts();
+            this.broadcast('game:multiplier', {
+              multiplier: this.gameState.currentMultiplier.toFixed(2),
+              timestamp: new Date()
+            });
+          }, 50); // Update every 50ms
+        });
+      } catch (error) {
+        console.error('Error in game round:', error);
+      }
+    };
+
+    // Continuous game loop
+    while (this.isGameRunning) {
+      try {
+        await runGameRound();
+        await this.handleCrash();
+        // Short delay between rounds
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      } catch (error) {
+        console.error('Error in continuous game loop:', error);
+        // Add small delay before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
   }
+
 
   private startGameLoop() {
     let lastUpdateTime = Date.now();
@@ -165,11 +262,6 @@ export class GameService {
   }
 
   private async handleCrash() {
-    if (this.gameLoop) {
-      clearInterval(this.gameLoop as NodeJS.Timeout);
-      this.gameLoop = null;
-    }
-
     this.gameState.status = 'crashed';
     this.gameState.endTime = new Date();
 
@@ -180,7 +272,7 @@ export class GameService {
     await this.redisClient.set(
       `game:result:${this.gameState.roundId}`,
       JSON.stringify(gameResult),
-      { EX: 86400 } // 24 hours
+      { EX: 86400 }
     );
 
     // Broadcast crash
@@ -189,12 +281,6 @@ export class GameService {
       timestamp: this.gameState.endTime,
       results: gameResult
     });
-
-    // Start new round after delay
-    setTimeout(() => {
-      this.initializeGame();
-      this.startGame();
-    }, 3000);
   }
 
   private async processGameResults(): Promise<GameResult> {
@@ -443,6 +529,7 @@ export class GameService {
   /**
    * Handle user disconnect
    */
+
   public async handleDisconnect(userId: string): Promise<void> {
     const bet = this.gameState.participants.get(userId);
 
