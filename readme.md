@@ -2,7 +2,13 @@
 
 The Aviator game is a popular online betting game that operates on a web socket for real-time interaction. Players place bets on a virtual airplane that takes off and flies away. The goal is to cash out before the plane "flies away" (crashes), with the multiplier increasing as the plane ascends.
 
+https://github.com/user-attachments/assets/34e6e124-69aa-4bd6-95f0-2389c9bc39d7
+
+
 ### Key Components
+
+
+
 
 1. **User Interface (UI)**
 2. **Betting System**
