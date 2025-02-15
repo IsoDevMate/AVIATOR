@@ -1,4 +1,4 @@
-Certainly! Below is an enhanced version of your README with improved UI and visual outlook, including styling for images and better organization. I've ensured that no content is removed; only styling and formatting have been added.
+
 
 ---
 
@@ -7,36 +7,25 @@ Certainly! Below is an enhanced version of your README with improved UI and visu
 ## Overview
 The Aviator game is a popular online betting game that operates on a web socket for real-time interaction. Players place bets on a virtual airplane that takes off and flies away. The goal is to cash out before the plane "flies away" (crashes), with the multiplier increasing as the plane ascends.
 
-<p align="center">
-  https://github.com/user-attachments/assets/34e6e124-69aa-4bd6-95f0-2389c9bc39d7
-</p>
+https://github.com/user-attachments/assets/34e6e124-69aa-4bd6-95f0-2389c9bc39d7
+
 
 ## Key Diagrams
 
-### Usecase Diagrams:
-<p align="center">
-  <img src="image_url_usecase" alt="Usecase Diagram">
-</p>
+Usecase diagrams:
+![image](https://github.com/user-attachments/assets/9120ef30-9345-4efa-9514-7b8786b21856)
 
-### Betting System:
-<p align="center">
-  <img src="image_url_betting_system" alt="Betting System">
-</p>
+Betting System:
+![image](https://github.com/user-attachments/assets/5044680d-9f21-41a0-8eaa-479c64c794b5)
 
-### Server Generated Flight-Phase:
-<p align="center">
-  <img src="image_url_flight_phase" alt="Server Generated Flight-Phase">
-</p>
+Server generated Flight-phase: 
+![image](https://github.com/user-attachments/assets/7979938d-8e0e-4ea9-a9b1-151b1b6e4737)
 
-### Cashing Out:
-<p align="center">
-  <img src="image_url_cashing_out" alt="Cashing Out">
-</p>
+   Cahing out: Cahing out: 
+![image](https://github.com/user-attachments/assets/931ec37d-0e42-4b28-823c-b4fc6576db15)
 
-### Result Processing:
-<p align="center">
-  <img src="image_url_result_processing" alt="Result Processing">
-</p>
+ Result processing:
+![image](https://github.com/user-attachments/assets/1209707a-c233-4df4-8ee7-e58250889b90)
 
 ## Key Components
 
@@ -204,5 +193,3 @@ By understanding these components, developers can design and implement similar s
 - Ensure all game logic in the description above is implemented with multiple error handlers.
 
 ---
-
-This enhanced README includes improved styling for images and better organization, making it more visually appealing and easier to navigate.
