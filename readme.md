@@ -17,16 +17,16 @@ Betting System:
 
 
 
-Server generated Flight-phase:
+Server generated Flight-phase: 
 ![image](https://github.com/user-attachments/assets/7979938d-8e0e-4ea9-a9b1-151b1b6e4737)
 
 
-Cahing out:
 
+   Cahing out: Cahing out: 
 ![image](https://github.com/user-attachments/assets/931ec37d-0e42-4b28-823c-b4fc6576db15)
 
-Result processing:
 
+ Result processing:
 ![image](https://github.com/user-attachments/assets/1209707a-c233-4df4-8ee7-e58250889b90)
 
 
