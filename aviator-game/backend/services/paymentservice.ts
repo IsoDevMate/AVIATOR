@@ -1,22 +1,20 @@
 import { db } from '../db/database';
-import { transactions, users } from '../models/schema';
+import { transactions, users, InsertUser,InsertTransaction } from '../models/schema';
 import { eq, sql } from 'drizzle-orm';
 import axios from 'axios';
 import { WebSocket } from 'ws';
 import { mpesaConfig, paypalConfig } from '../config/payments';
-
 interface PaymentDetails {
   amount: number;
   currency: string;
   userId: string;
   method: 'mpesa' | 'paypal';
 }
-
 interface MpesaConfig {
   consumerKey: string;
   consumerSecret: string;
-  passkey: string;
   shortcode: string;
+  passkey: string;
   callbackUrl: string;
 }
 
@@ -25,8 +23,6 @@ interface PayPalConfig {
   clientSecret: string;
   environment: 'sandbox' | 'production';
 }
-
-
 
 // // Initialize the payment service
 // const paymentService = PaymentService.getInstance(mpesaConfig, paypalConfig);
@@ -38,7 +34,7 @@ export class PaymentService {
   private constructor(
     private mpesaConfig: MpesaConfig,
     private paypalConfig: PayPalConfig
-  ) {}
+  ) { }
 
   static getInstance(mpesaConfig: MpesaConfig, paypalConfig: PayPalConfig) {
     if (!PaymentService.instance) {
@@ -71,14 +67,16 @@ export class PaymentService {
 
       // Record transaction
       const transactionId = crypto.randomUUID();
-      await tx.insert(transactions).values({
+      const insertData: InsertTransaction = {
         id: transactionId,
         userId,
         type: transactionType,
         amount,
         status: 'completed',
-        createdAt: new Date()
-      });
+        createdAt: new Date(),
+        updatedAt: Date.now()
+      };
+      await tx.insert(transactions).values(insertData).execute();
 
       // Notify connected client about balance update
       const ws = this.connectedClients.get(userId);

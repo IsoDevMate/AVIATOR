@@ -1,5 +1,3 @@
-// types/express/index.d.ts
-
 import { User } from '../../models/schema';
 
 declare global {

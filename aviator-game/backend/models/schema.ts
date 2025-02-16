@@ -41,9 +41,9 @@ export interface Bet {
     enabled: boolean;
     targetMultiplier: number;
   };
-
 }
-// User Table Schema
+
+// Define the tables
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
@@ -55,27 +55,21 @@ export const users = sqliteTable('users', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at').notNull(),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
-  status: text('status', {
-    enum: ['active', 'suspended', 'banned']
-  }).default('active')
+  status: text('status', { enum: ['active', 'suspended', 'banned'] }).default('active')
 });
 
-// Bet Table Schema
 export const bets = sqliteTable('bets', {
   id: text('id').primaryKey(),
   playerId: text('player_id').notNull(),
   amount: real('amount').notNull(),
   placedAt: integer('placed_at', { mode: 'timestamp' }).notNull(),
   cashoutMultiplier: real('cashout_multiplier'),
-  status: text('status', {
-    enum: ['active', 'won', 'lost']
-  }).notNull(),
-   autoMode: text('auto_mode', { mode: 'json' }).$type<{
+  status: text('status', { enum: ['active', 'won', 'lost'] }).notNull(),
+  autoMode: text('auto_mode', { mode: 'json' }).$type<{
     enabled: boolean;
     targetMultiplier: number;
   } | null>()
 });
-
 
 export const transactions = sqliteTable('transactions', {
   id: text('id').primaryKey(),
@@ -93,19 +87,13 @@ export const tokenBlacklist = sqliteTable('token_blacklist', {
 });
 
 
-// // Game State Table Schema
-// export const gameStates = sqliteTable('game_states', {
-//   status: text('status', {
-//     enum: ['betting', 'flying', 'crashed']
-//   }).notNull(),
-//   currentMultiplier: real('current_multiplier').notNull(),
-//   crashPoint: real('crash_point').notNull(),
-//   startTime: integer('start_time', { mode: 'timestamp' }),
-//   endTime: integer('end_time', { mode: 'timestamp' }),
-//   roundId: text('round_id').notNull()
-// });
+// insert types
+export type InsertUser = typeof users.$inferInsert;
+export type InsertBet = typeof bets.$inferInsert;
+export type InsertTransaction = typeof transactions.$inferInsert;
 
-// Insert Schema
-export const insertUserSchema = createInsertSchema(users);
-export const insertBetSchema = createInsertSchema(bets);
-export const insertTransactionSchema = createInsertSchema(transactions);
+// select types
+export type SelectUser = typeof users.$inferSelect;
+export type SelectBet = typeof bets.$inferSelect;
+export type SelectTransaction = typeof transactions.$inferSelect;
+

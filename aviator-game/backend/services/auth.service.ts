@@ -1,9 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { db } from '../db/database';
-import { users } from '../models/schema';
 import { eq } from 'drizzle-orm';
-import { tokenBlacklist } from '../models/schema';
+import { tokenBlacklist,InsertUser,users } from '../models/schema';
 export interface User {
   id: string;
   email: string;
@@ -62,7 +61,17 @@ export class AuthService {
   // This password contains at least one lowercase letter, one uppercase letter, one digit, and is at least 8 characters long
 
   public static async register(data: RegisterDTO) {
-    // Check if user exists
+      const insertData: InsertUser = {
+      id: crypto.randomUUID(),
+      email: data.email,
+      username: data.username,
+      passwordHash: await this.hashPassword(data.password),
+      createdAt: new Date(),
+      role: 'user',
+      status: 'active',
+      updatedAt: Date.now()
+    };
+
     const existingUser = await db
       .select()
       .from(users)
@@ -90,15 +99,7 @@ export class AuthService {
     // Create new user
     const newUser = await db
       .insert(users)
-      .values({
-        id: crypto.randomUUID(),
-        email: data.email,
-        username: data.username,
-        passwordHash,
-        createdAt: new Date(),
-        role: 'user',
-        status: 'active'
-      })
+      .values(insertData)
       .returning()
       .get();
 
@@ -137,7 +138,6 @@ export class AuthService {
         expiresAt: new Date()
       })
       .execute();
-
     return { message: 'Logout successful' };
   }
 }

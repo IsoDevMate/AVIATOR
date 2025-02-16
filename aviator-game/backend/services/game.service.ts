@@ -1,17 +1,17 @@
-
 import { WebSocket, WebSocketServer } from 'ws';
 import { setTimeout } from 'timers';
 type Timeout = ReturnType<typeof setTimeout>;
 import { RedisClientType } from 'redis';
 import { randomBytes } from 'crypto';
 import { db } from '../db/database';
-import { bets, transactions, users } from '../models/schema';
+import { bets,InsertTransaction, transactions, users } from '../models/schema';
 import { createMessage } from '../utils/websocket.utils';
-import { GameState,PendingBet, GameResult, GameBalance, GameParticipant, Bet } from '../interfaces/interface';
+import { GameState,PendingBet, GameResult, GameBalance, GameParticipant } from '../interfaces/interface';
 import { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { InferSelectModel } from 'drizzle-orm';
 type User = InferSelectModel<typeof users>;
 type Transaction = InferSelectModel<typeof transactions>;
+
 
 export class GameService {
   private static instance: GameService;
@@ -103,14 +103,16 @@ export class GameService {
         .where(eq(users.id, userId));
 
       const transactionId = crypto.randomUUID();
-      await tx.insert(transactions).values({
+      const insertData: InsertTransaction = {
         id: transactionId,
         userId,
-        type: 'withdrawal',
+        type: 'deposit',
         amount,
         status: 'completed',
-        createdAt: new Date()
-      });
+        createdAt: new Date(),
+        updatedAt: Date.now()
+      };
+      await tx.insert(transactions).values(insertData);
       console.log(`✅ Transfer completed - Transaction ID: ${transactionId}`);
     });
   }
@@ -329,6 +331,11 @@ export class GameService {
   }
 
   public async placeBet(playerId: string, amount: number, autoMode?: { enabled: boolean; targetMultiplier: number }) {
+    if (amount < this.MIN_BET_AMOUNT || amount > this.MAX_BET_AMOUNT) {
+      console.error(`❌ Invalid bet amount for player ${playerId}`);
+      throw new Error('Invalid bet amount');
+    }
+
     console.log(`🎲 Bet placement attempt - Player: ${playerId}, Amount: ${amount}`);
 
     if (this.gameState.status !== 'betting') {
@@ -416,6 +423,8 @@ export class GameService {
   }
 
   public async handleDisconnect(userId: string): Promise<void> {
+     const transactionId = crypto.randomUUID();
+
     console.log(`👋 User ${userId} disconnected`);
     const participant = this.gameState.participants.get(userId);
 
@@ -427,15 +436,17 @@ export class GameService {
         .set({ status: 'lost' })
         .where(eq(bets.id, participant.id));
 
-      const transactionId = crypto.randomUUID();
-      await db.insert(transactions).values({
-        id: transactionId,
-        userId: userId,
-        type: 'bet',
-        amount: -participant.betAmount,
-        status: 'completed',
-        createdAt: new Date()
-      });
+       const insertData: InsertTransaction = {
+      id: transactionId,
+      userId,
+      type: 'deposit',
+      amount: participant.betAmount,
+      status: 'completed',
+      createdAt: new Date(),
+      updatedAt: Date.now()
+    };
+
+      await db.insert(transactions).values(insertData);
       console.log(`   📝 Loss transaction recorded: ${transactionId}`);
     }
 
