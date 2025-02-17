@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { db } from '../db/database';
-import { users } from '../models/schema';
+import { users,InsertUser } from '../models/schema';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
@@ -50,19 +50,28 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         return done(null, existingUser);
       }
 
+      const email = profile.emails?.[0].value;
+      if (!email) {
+        return done(new Error('No email found in Google profile'));
+      }
+
+      const username = profile.displayName || email.split('@')[0];
+
+      const insertUser: InsertUser = {
+        id: crypto.randomUUID(),
+        email,
+        username: username,
+        passwordHash: '', // Empty for OAuth users
+        googleId: profile.id,
+        createdAt: new Date(),
+        role: 'user',
+        status: 'active',
+        updatedAt: Date.now()
+      };
       // Create new user if none exists
       const newUser = await db
         .insert(users)
-        .values({
-          id: crypto.randomUUID(),
-          email: profile.emails?.[0].value ?? '',
-          username: profile.displayName || profile.emails?.[0].value.split('@')[0] || '',
-          passwordHash: '', // Empty for OAuth users
-          googleId: profile.id,
-          createdAt: new Date(),
-          role: 'user',
-          status: 'active'
-        })
+        .values(insertUser)
         .returning()
         .get();
 

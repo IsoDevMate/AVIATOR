@@ -8,7 +8,6 @@ import { User } from '../models/schema';
 
 export const router = Router();
 
-// Register route - Fixed type definitions
 router.post(
   '/register',
   async (
@@ -20,7 +19,6 @@ router.post(
   }
 );
 
-// Login route - Fixed type definitions
 router.post(
   '/login',
   async (
@@ -47,9 +45,12 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req: Request, res: Response) => {
-    const user = req.user as User;
+    const user = req.user as User | undefined;
+    if (!user) {
+      return res.redirect('/login');
+    }
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: '72h'
+      expiresIn: '30000h'
     });
     res.redirect(`/auth-callback?token=${token}`);
   }

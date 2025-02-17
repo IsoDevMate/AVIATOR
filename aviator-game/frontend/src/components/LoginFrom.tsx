@@ -21,7 +21,7 @@ export const LoginForm = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/api/auth/google';
+    window.location.href = 'http://localhost:7000/api/auth/google';
   };
 
   return (

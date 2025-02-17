@@ -34,7 +34,7 @@ export const Balance = () => {
         <h3 className="text-3xl font-bold">
           <span className="text-gray-400">Balance:</span>{' '}
           <motion.span
-            key={balance?.toString()}
+            key={balance.toString()}
             initial={{ scale: 1.2, color: '#22c55e' }}
             animate={{ scale: 1, color: '#4ade80' }}
             className="text-green-400"

@@ -51,7 +51,7 @@ const initialState: WebSocketState = {
   socket: null,
 };
 
- 
+
 
 const websocketSlice = createSlice({
   name: 'websocket',
@@ -63,6 +63,9 @@ const websocketSlice = createSlice({
     websocketMessageReceived(state, action: PayloadAction<{ type: string; data: { multiplier: number } & Record<string, unknown> }>) {
       state.messages.push(action.payload);
       if (action.payload.type === 'game:multiplier') {
+        state.multiplier = action.payload.data.multiplier;
+      }
+      if (action.payload.type === 'game:crash') {
         state.multiplier = action.payload.data.multiplier;
       }
     },

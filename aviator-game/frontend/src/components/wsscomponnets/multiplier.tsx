@@ -14,7 +14,6 @@
 //   );
 // };
 
-
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../hooks/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +27,6 @@ export const Multiplier = () => {
   useEffect(() => {
     if (multiplier > 1) {
       setIsRising(true);
-      // Add new point to graph
       setGraphPoints(prev => [...prev, {
         x: prev.length,
         y: multiplier
@@ -48,7 +46,7 @@ export const Multiplier = () => {
       <motion.div
         className="absolute inset-0 flex items-center justify-center"
         animate={{
-          scale: isRising ? [1, 1.05] : 1,
+          scale: isRising ? [1, 1.1] : 1,
         }}
         transition={{ repeat: Infinity, duration: 0.5 }}
       >
@@ -59,19 +57,19 @@ export const Multiplier = () => {
               color: multiplier > 2 ? ['#ffffff', '#ef4444'] : '#ffffff',
             }}
           >
-            {multiplier.toFixed(2)}x
+            {multiplier}x
             <AnimatePresence>
               {isRising && (
                 <motion.div
-                  initial={{ x: -50, rotate: -45 }}
+                  initial={{ x: 0, y: 0, rotate: -45 }}
                   animate={{
-                    x: 50,
-                    rotate: isRising ? [-45, -35] : -45,
-                    y: isRising ? [0, -10] : 0
+                    x: [0, 50, 100, 150, 200, 250, 300, 350, 400],
+                    y: [0, -10, -20, -10, 0, 10, 20, 10, 0],
+                    rotate: [0, 10, 20, 10, 0, -10, -20, -10, 0]
                   }}
                   transition={{
                     repeat: Infinity,
-                    duration: 2,
+                    duration: 5,
                     ease: "linear"
                   }}
                 >
@@ -87,7 +85,7 @@ export const Multiplier = () => {
       <svg className="absolute bottom-0 left-0 w-full h-1/2 overflow-visible">
         <motion.path
           d={`M 0 ${400} ${graphPoints.map((point, i) =>
-            `L ${(i / graphPoints.length) * 400} ${400 - (point.y * 50)}`
+            `L ${(i / graphPoints.length) * 400} ${400 - (Math.pow(point.y, 2) * 50)}`
           ).join(' ')}`}
           fill="none"
           stroke="#ef4444"

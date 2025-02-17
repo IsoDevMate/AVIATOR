@@ -17,7 +17,7 @@ export interface User {
   createdAt: Date;
   lastLoginAt?: Date;
   status: 'active' | 'suspended' | 'banned';
-  updatedAt?: Date;
+
 }
 
 export interface Transaction {
@@ -27,7 +27,6 @@ export interface Transaction {
   amount: number;
   status: 'pending' | 'completed' | 'failed';
   createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Bet {
@@ -53,7 +52,6 @@ export const users = sqliteTable('users', {
   role: text('role', { enum: ['user', 'admin', 'moderator'] }).default('user'),
   googleId: text('google_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at').notNull(),
   lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
   status: text('status', { enum: ['active', 'suspended', 'banned'] }).default('active')
 });
@@ -78,7 +76,6 @@ export const transactions = sqliteTable('transactions', {
   amount: real('amount').notNull(),
   status: text('status', { enum: ['pending', 'completed', 'failed'] }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at').notNull()
 });
 
 export const tokenBlacklist = sqliteTable('token_blacklist', {

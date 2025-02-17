@@ -59,7 +59,6 @@ export class PaymentService {
         .update(users)
         .set({
           balance: sql`balance + ${amount}`,
-          updatedAt: sql`CURRENT_TIMESTAMP`
         })
         .where(eq(users.id, userId))
         .returning()
@@ -74,7 +73,6 @@ export class PaymentService {
         amount,
         status: 'completed',
         createdAt: new Date(),
-        updatedAt: Date.now()
       };
       await tx.insert(transactions).values(insertData).execute();
 

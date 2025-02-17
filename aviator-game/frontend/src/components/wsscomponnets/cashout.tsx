@@ -33,13 +33,16 @@ import { useAppSelector } from '../../hooks/hooks';
 import { sendWebSocketMessage } from '../../services/websocket';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-
 export const Cashout = () => {
   const socket = useAppSelector((state) => state.websocket.socket);
   const multiplier = useAppSelector((state) => state.websocket.multiplier) as number;
   const [lastCashout, setLastCashout] = React.useState<number | null>(null);
 
   const handleCashout = () => {
+    if (!socket) {
+      console.error('Socket not connected');
+      return;
+    }
     const message = {
       type: 'cashout',
       data: {},
@@ -74,7 +77,7 @@ export const Cashout = () => {
             exit={{ opacity: 0, y: 20 }}
             className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg"
           >
-            Cashed out at {lastCashout.toFixed(2)}x!
+            Cashed out at {lastCashout}x!
           </motion.div>
         )}
       </AnimatePresence>

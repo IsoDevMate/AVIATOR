@@ -134,12 +134,21 @@ export const PlaceBet = () => {
   });
   const socket = useAppSelector((state) => state.websocket.socket) as WebSocket;
 
-  const handlePlaceBet = () => {
+   const handlePlaceBet = () => {
+    if (!socket) return;
+
     const message = {
       type: 'place_bet',
-      data: { amount, autoMode },
+      data: {
+        amount: Number(amount),
+        autoMode: {
+          enabled: autoMode.enabled,
+          targetMultiplier: Number(autoMode.targetMultiplier)
+        }
+      }
     };
-    sendWebSocketMessage(socket, message);
+
+    sendWebSocketMessage(socket as WebSocket, message);
   };
 
   const presetAmounts = [100, 200, 500, 1000, 5000, 20000];

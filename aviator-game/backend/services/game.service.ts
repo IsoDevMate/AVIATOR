@@ -110,7 +110,6 @@ export class GameService {
         amount,
         status: 'completed',
         createdAt: new Date(),
-        updatedAt: Date.now()
       };
       await tx.insert(transactions).values(insertData);
       console.log(`✅ Transfer completed - Transaction ID: ${transactionId}`);
@@ -443,7 +442,6 @@ export class GameService {
       amount: participant.betAmount,
       status: 'completed',
       createdAt: new Date(),
-      updatedAt: Date.now()
     };
 
       await db.insert(transactions).values(insertData);

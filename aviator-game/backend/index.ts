@@ -24,7 +24,7 @@ const createSecureRedisClient = () => {
           console.error('Redis connection failed after 10 retries');
           return new Error('Redis connection failed');
         }
-        return Math.min(2 ** retries * 100, 3000);
+        return Math.min(2 ** retries * 100, 7000);
       }
     }
   });
@@ -114,7 +114,7 @@ const initializeServer = async () => {
     console.log('Database Stats:', stats);
 
     // Start server
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 7000;
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

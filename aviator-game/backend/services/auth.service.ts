@@ -69,7 +69,6 @@ export class AuthService {
       createdAt: new Date(),
       role: 'user',
       status: 'active',
-      updatedAt: Date.now()
     };
 
     const existingUser = await db
