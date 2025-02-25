@@ -14,6 +14,7 @@
   "description": "",
   "dependencies": {
     "@paypal/payouts-sdk": "^1.1.1",
+    "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
@@ -30,12 +31,14 @@
     "nodemon": "^3.1.9",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "paypal-rest-sdk": "^1.8.1",
     "redis": "^4.7.0",
     "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",
-    "timers": "^0.1.1"
+    "timers": "^0.1.1",
+    "twilio": "^5.4.5"
   },
   "devDependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
@@ -54,6 +57,7 @@
     "@types/paypal-rest-sdk": "^1.7.9",
     "@types/redis": "^4.0.10",
     "@types/socket.io": "^3.0.1",
+    "@types/twilio": "^3.19.2",
     "@types/ws": "^8.5.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"

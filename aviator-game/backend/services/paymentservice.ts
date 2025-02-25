@@ -9,6 +9,7 @@ interface PaymentDetails {
   currency: string;
   userId: string;
   method: 'mpesa' | 'paypal';
+  phoneNumber?: string;
 }
 interface MpesaConfig {
   consumerKey: string;
@@ -31,6 +32,8 @@ export class PaymentService {
   private static instance: PaymentService;
   private connectedClients: Map<string, WebSocket> = new Map();
 
+
+
   private constructor(
     private mpesaConfig: MpesaConfig,
     private paypalConfig: PayPalConfig
@@ -50,6 +53,57 @@ export class PaymentService {
 
   removeClient(userId: string) {
     this.connectedClients.delete(userId);
+  }
+
+
+  private async validatePhoneNumber(phoneNumber: string): Promise<boolean> {
+    // Basic Kenyan phone number validation
+    const phoneRegex = /^254[17]\d{8}$/;
+    return phoneRegex.test(phoneNumber);
+  }
+
+  private async ensureValidPhoneNumber(userId: string, phoneNumber?: string): Promise<string> {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+
+    if (!user) throw new Error('User not found');
+
+    // If phone number is provided, validate and update it
+    if (phoneNumber) {
+      if (!await this.validatePhoneNumber(phoneNumber)) {
+        throw new Error('Invalid phone number format. Use format: 254XXXXXXXXX');
+      }
+
+      // Update user's phone number if it's different
+      if (user.phoneNumber !== phoneNumber) {
+        await db
+          .update(users)
+          .set({
+            phoneNumber,
+            phoneVerified: false
+          })
+          .where(eq(users.id, userId));
+      }
+
+      return phoneNumber;
+    }
+
+    // If no phone number provided, check if user has a verified number
+    if (!user.phoneNumber) {
+      throw new Error('Please add a phone number for M-Pesa transactions');
+    }
+
+    if (!user.phoneVerified) {
+      throw new Error('Please verify your phone number first');
+    }
+
+    if (typeof user.phoneNumber === 'string') {
+      return user.phoneNumber;
+    }
+    throw new Error('User phone number is not valid');
   }
 
   private async updateUserBalance(userId: string, amount: number, transactionType: 'deposit' | 'withdrawal') {
@@ -108,14 +162,14 @@ export class PaymentService {
   async initiateWithdrawal(details: PaymentDetails) {
     const { amount, userId, method } = details;
 
-    // Check if user has sufficient balance
+    //Check  for user has sufficient balance
     const user = await db
       .select()
       .from(users)
       .where(eq(users.id, userId))
       .get();
 
-    if (!user || user.balance < amount) {
+    if (!user || typeof user.balance !== 'number' || user.balance < amount) {
       throw new Error('Insufficient balance');
     }
 
@@ -129,16 +183,17 @@ export class PaymentService {
   }
 
   private async initiateMpesaDeposit(details: PaymentDetails) {
-    const { amount, userId } = details;
+    const { amount, userId, phoneNumber } = details;
 
-    // Generate M-PESA STK push
+    const validatedPhone = await this.ensureValidPhoneNumber(userId, phoneNumber);
+
+
     const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, '').slice(0, 14);
     const password = Buffer.from(
       `${this.mpesaConfig.shortcode}${this.mpesaConfig.passkey}${timestamp}`
     ).toString('base64');
 
     try {
-      // Get access token
       const authResponse = await axios.get(
         'https://sandbox.safaricom.co.ke/oauth/v1/generate',
         {
@@ -149,7 +204,7 @@ export class PaymentService {
         }
       );
 
-      // Initiate STK push
+      //Initiating STK push
       const response = await axios.post(
         'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
         {
@@ -158,9 +213,9 @@ export class PaymentService {
           Timestamp: timestamp,
           TransactionType: 'CustomerPayBillOnline',
           Amount: amount,
-          PartyA: userId, // User's phone number
+          PartyA: validatedPhone,
           PartyB: this.mpesaConfig.shortcode,
-          PhoneNumber: userId,
+          PhoneNumber: '254708374149',
           CallBackURL: this.mpesaConfig.callbackUrl,
           AccountReference: `Deposit-${userId}`,
           TransactionDesc: 'Game Deposit'
@@ -183,7 +238,7 @@ export class PaymentService {
     const { amount, currency, userId } = details;
 
     try {
-      // Create PayPal order
+      // PayPal order
       const order = await axios.post(
         `${this.paypalConfig.environment === 'sandbox' ?
           'https://api-m.sandbox.paypal.com' :
@@ -214,15 +269,16 @@ export class PaymentService {
   }
 
   private async initiateMpesaWithdrawal(details: PaymentDetails) {
-    const { amount, userId } = details;
+      const { amount, userId, phoneNumber } = details;
+
+    const validatedPhone = await this.ensureValidPhoneNumber(userId, phoneNumber);
+
 
     try {
-      // Generate security credential
       const securityCredential = Buffer.from(
         `${this.mpesaConfig.shortcode}${this.mpesaConfig.passkey}`
       ).toString('base64');
 
-      // Get access token
       const authResponse = await axios.get(
         'https://sandbox.safaricom.co.ke/oauth/v1/generate',
         {
@@ -233,7 +289,7 @@ export class PaymentService {
         }
       );
 
-      // Initiate B2C payment
+      //Initiating  B2C payment for daraja sdk
       const response = await axios.post(
         'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest',
         {
@@ -242,7 +298,7 @@ export class PaymentService {
           CommandID: 'BusinessPayment',
           Amount: amount,
           PartyA: this.mpesaConfig.shortcode,
-          PartyB: userId, // User's phone number
+          PartyB: validatedPhone,
           Remarks: 'Game Withdrawal',
           QueueTimeOutURL: `${this.mpesaConfig.callbackUrl}/timeout`,
           ResultURL: `${this.mpesaConfig.callbackUrl}/result`,
@@ -267,7 +323,7 @@ export class PaymentService {
     const { amount, currency, userId } = details;
 
     try {
-      // Create PayPal payout
+      //PayPal payouts
       const payout = await axios.post(
         `${this.paypalConfig.environment === 'sandbox' ?
           'https://api-m.sandbox.paypal.com' :
@@ -307,7 +363,7 @@ export class PaymentService {
     const { ResultCode, TransactionAmount, TransID } = data.Body.stkCallback;
 
     if (ResultCode === 0) {
-      // Transaction successful
+      // Transaction success
       const userId = data.Body.stkCallback.CallbackMetadata.Item.find(
         (item: any) => item.Name === 'PhoneNumber'
       ).Value;

@@ -3,7 +3,6 @@ import { createServer } from 'http';
 import session from 'express-session';
 import { createClient, RedisClientType } from 'redis';
 import * as connectRedis from 'connect-redis';
-import passport from 'passport';
 import { WebSocketServer } from 'ws';
 import { router } from './routes';
 import { handleWebSocketConnection } from './services/websocket.service';
@@ -11,6 +10,10 @@ import { databaseService } from './db/database';
 import dotenv from 'dotenv';
 import cors from 'cors';
 dotenv.config();
+import { paymentRouter } from './routes/pay'
+import { setupPassport } from './config/passport';
+import passport from 'passport';
+
 
 const createSecureRedisClient = () => {
   const client = createClient({
@@ -51,16 +54,13 @@ const createSecureRedisClient = () => {
 
 const initializeServer = async () => {
   const app = express();
+  setupPassport();
   const httpServer = createServer(app);
-
-  // Initialize Redis client
+  app.use(passport.initialize());
   const redisClient = createSecureRedisClient();
 
   try {
-    // Connect to Redis
     await redisClient.connect();
-
-    // Test Redis connection
     await redisClient.ping();
     console.log('Redis connection test successful');
 
@@ -71,7 +71,6 @@ const initializeServer = async () => {
       prefix: "aviator:"
     });
 
-    // Configure middleware
     app.use(express.json());
     app.use(cors(
       {
@@ -91,35 +90,36 @@ const initializeServer = async () => {
       })
     );
 
-    app.use(passport.initialize());
-    app.use(passport.session());
 
-    // Routes
     app.use('/api', router);
+    app.use('/pay', paymentRouter)
+    app.use((req, res, next) => {
+      console.log('Request Headers:', req.headers);
+      console.log('Authentication Header:', req.    headers.authorization);
+      next();
+    });
 
     // WebSocket server setup
     const wss = new WebSocketServer({ server: httpServer });
     handleWebSocketConnection(wss, redisClient as RedisClientType);
 
-    // Error handling middleware
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
       console.error(err.stack);
       res.status(500).json({ error: 'Internal Server Error' });
     });
 
-    // Validate database connection
+    //db connection
     const connectionStatus = await databaseService.testConnection();
     console.log(connectionStatus.message);
     const stats = await databaseService.getDatabaseStats();
     console.log('Database Stats:', stats);
 
-    // Start server
     const PORT = process.env.PORT || 7000;
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
 
-    // Graceful shutdown handling
+    // Graceful shutdown
     process.on('SIGTERM', async () => {
       console.log('SIGTERM received. Shutting down gracefully...');
       await redisClient.quit();
@@ -135,7 +135,6 @@ const initializeServer = async () => {
   }
 };
 
-// Start the server
 initializeServer().catch(error => {
   console.error('Fatal error during server initialization:', error);
   process.exit(1);

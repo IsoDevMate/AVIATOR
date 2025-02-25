@@ -216,12 +216,12 @@ export function handleWebSocketConnection(wss: WebSocketServer, redisClient: Red
         console.log('Raw message received:', message.toString());
 
         try {
-          // Add more detailed logging
+
           const parsedMessage = parseMessage(message.toString());
           console.log('Successfully parsed message:', parsedMessage);
           const { type, data } = parsedMessage;
 
-          // Add logging for the message type
+
           console.log('Processing message type:', type);
 
           switch (type) {
@@ -276,7 +276,7 @@ export function handleWebSocketConnection(wss: WebSocketServer, redisClient: Red
   }
 });
 
-      // Handle client disconnect
+
       ws.on('close', () => {
         console.log(`User ${authWs.userId} disconnected`);
         if (authWs.userId) {
@@ -292,7 +292,7 @@ export function handleWebSocketConnection(wss: WebSocketServer, redisClient: Red
     }
   });
 
-  // Set up heartbeat interval
+  //interval conn check
   const interval = setInterval(() => {
     wss.clients.forEach((ws) => {
       const authWs = ws as AuthenticatedWebSocket;

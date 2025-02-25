@@ -16,7 +16,7 @@ type Transaction = InferSelectModel<typeof transactions>;
 export class GameService {
   private static instance: GameService;
   private gameState!: GameState;
-  private readonly BETTING_PHASE_DURATION = 10000;
+  private readonly BETTING_PHASE_DURATION = 5000;
   private readonly MIN_BET_AMOUNT = 10;
   private readonly MAX_BET_AMOUNT = 20000;
   private gameLoop: Timeout | null = null;
@@ -24,7 +24,7 @@ export class GameService {
   private isGameRunning: boolean = false;
   private readonly BASE_GROWTH_RATE = 0.1;
   private gameBalances: Map<string, number> = new Map();
-    private pendingBets: Map<string, PendingBet> = new Map();
+  private pendingBets: Map<string, PendingBet> = new Map();
   private connectedPlayers: Set<string> = new Set();
 
   private constructor(

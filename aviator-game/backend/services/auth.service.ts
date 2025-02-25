@@ -81,7 +81,7 @@ export class AuthService {
       throw new Error('User already exists');
     }
 
-    // Validate email and password
+    // Validate credentials
     const isEmailValid = await this.validateEmail(data.email);
     if (!isEmailValid) {
       throw new Error('Invalid email format');
@@ -92,10 +92,8 @@ export class AuthService {
       throw new Error('Password does not meet requirements');
     }
 
-    // Hash password
     const passwordHash = await this.hashPassword(data.password);
 
-    // Create new user
     const newUser = await db
       .insert(users)
       .values(insertData)
@@ -116,12 +114,12 @@ export class AuthService {
       throw new Error('User not found');
     }
 
-    const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash as string);
     if (!isPasswordValid) {
       throw new Error('Invalid password');
     }
 
-    const token = this.generateToken(user.id);
+    const token = this.generateToken(user.id as string);
 
     return { user, token };
   }

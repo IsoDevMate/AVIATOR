@@ -10,7 +10,6 @@ export class AuthController {
     try {
       const { email, password, username } = req.body;
 
-      // Validate required fields
       if (!email || !password || !username) {
         return res.status(400).json({
           message: 'Email, password, and username are required'
@@ -80,7 +79,7 @@ export class AuthController {
 
       await AuthService.logout({ token });
 
-      // Perform logout operation
+
       return res.json({
         message: 'Logout successful'
       });
