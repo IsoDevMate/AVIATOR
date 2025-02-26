@@ -12,8 +12,29 @@ export class PhoneVerificationService {
     return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
+  private static formatPhoneNumber(phoneNumber: string): string {
+  // Remove any non-digit characters
+  const digits = phoneNumber.replace(/\D/g, '');
+
+  // For Kenyan numbers
+  if (digits.startsWith('0')) {
+    // Replace the leading 0 with +254
+    return '+254' + digits.substring(1);
+  }
+
+  // If the number doesn't start with +, add it
+  if (!phoneNumber.startsWith('+')) {
+    return '+' + digits;
+  }
+
+  return phoneNumber;
+}
+
   static async sendOTP(phoneNumber: string, userId: string): Promise<void> {
     // Check if there's an existing OTP that hasn't expired
+
+     const formattedPhone = this.formatPhoneNumber(phoneNumber);
+
     const existing = this.otpStore.get(userId);
     if (existing && Date.now() < existing.expires) {
       const timeLeft = Math.ceil((existing.expires - Date.now()) / 1000);
@@ -31,7 +52,7 @@ export class PhoneVerificationService {
 
     // Send OTP
     const message = `Your verification code is: ${otp}. Valid for 10 minutes.`;
-    const sent = await SMSService.sendSMS(phoneNumber, message);
+  const sent = await SMSService.sendSMS(formattedPhone, message);
 
     if (!sent) {
       this.otpStore.delete(userId);

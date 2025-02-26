@@ -37,7 +37,7 @@ export class AuthService {
     return jwt.sign(
       { id: userId },
       process.env.JWT_SECRET!,
-      { expiresIn: '72h' }
+      { expiresIn: '7200h' }
     );
   }
 

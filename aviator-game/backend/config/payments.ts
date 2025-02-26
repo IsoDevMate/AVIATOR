@@ -17,7 +17,7 @@ export const mpesaConfig: MpesaConfig = {
   consumerSecret: process.env.MPESA_CONSUMER_SECRET || "your_mpesa_consumer_secret",
   passkey: process.env.MPESA_PASSKEY || "your_mpesa_passkey",
   shortcode: process.env.MPESA_SHORTCODE || "your_mpesa_shortcode",
-  callbackUrl: process.env.MPESA_CALLBACK_URL || "http://localhost:3000/api/payments/mpesa/callback"
+  callbackUrl: process.env.MPESA_CALLBACK_URL || "https://aviator-5vrq.onrender.com/api/payments/mpesa/callback"
 };
 
 export const paypalConfig: PayPalConfig = {

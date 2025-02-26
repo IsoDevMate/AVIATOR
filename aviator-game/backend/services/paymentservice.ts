@@ -193,36 +193,44 @@ export class PaymentService {
       `${this.mpesaConfig.shortcode}${this.mpesaConfig.passkey}${timestamp}`
     ).toString('base64');
 
+    const consumerKey = this.mpesaConfig.consumerKey;
+    const consumerSecret = this.mpesaConfig.consumerSecret;
+    const shortcode = this.mpesaConfig.shortcode;
+    console.log("consumerKey",consumerKey,"condumerSecret", consumerSecret);
     try {
+
       const authResponse = await axios.get(
-        'https://sandbox.safaricom.co.ke/oauth/v1/generate',
+        'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
         {
           auth: {
-            username: this.mpesaConfig.consumerKey,
-            password: this.mpesaConfig.consumerSecret
+            username: consumerKey,
+            password: consumerSecret
           }
         }
       );
-
+      const phone = validatedPhone.substring(4);
+      console.log("phone", phone);
+      const callbackUrl = this.mpesaConfig.callbackUrl;
+      console.log("callbackUrl", callbackUrl);
       //Initiating STK push
       const response = await axios.post(
         'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
         {
-          BusinessShortCode: this.mpesaConfig.shortcode,
+          BusinessShortCode: shortcode,
           Password: password,
           Timestamp: timestamp,
           TransactionType: 'CustomerPayBillOnline',
           Amount: amount,
-          PartyA: validatedPhone,
+          PartyA: phone,
           PartyB: this.mpesaConfig.shortcode,
-          PhoneNumber: '254708374149',
-          CallBackURL: this.mpesaConfig.callbackUrl,
+          PhoneNumber: `254${phone}` || '0793043014',
+          CallBackURL: `${callbackUrl}/stk_callback`,
           AccountReference: `Deposit-${userId}`,
           TransactionDesc: 'Game Deposit'
         },
         {
           headers: {
-            Authorization: `Bearer ${authResponse.data.access_token}`
+        Authorization: `Bearer ${authResponse.data.access_token}`
           }
         }
       );
