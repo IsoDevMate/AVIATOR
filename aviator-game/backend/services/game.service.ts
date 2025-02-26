@@ -389,7 +389,7 @@ export class GameService {
 
   private broadcast(type: string, data: any) {
     const message = createMessage(type, data);
-    console.log(`📢 Broadcasting ${type}:`, data);
+  //  console.log(`📢 Broadcasting ${type}:`, data);
     this.wss.clients.forEach((client: WebSocket) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);

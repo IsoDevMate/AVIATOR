@@ -7,7 +7,10 @@ declare global {
     interface Request {
       user?: User;
     }
+    interface Request {
+      accessToken?: string;
+    }
   }
 }
 
-export { User };
+export { User, Request };

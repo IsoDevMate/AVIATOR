@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import axios from 'axios';
 import { WebSocket } from 'ws';
 import { mpesaConfig, paypalConfig } from '../config/payments';
+
 interface PaymentDetails {
   amount: number;
   currency: string;
@@ -37,6 +38,7 @@ export class PaymentService {
   private constructor(
     private mpesaConfig: MpesaConfig,
     private paypalConfig: PayPalConfig
+
   ) { }
 
   static getInstance(mpesaConfig: MpesaConfig, paypalConfig: PayPalConfig) {
@@ -45,6 +47,7 @@ export class PaymentService {
     }
     return PaymentService.instance;
   }
+
 
 
   registerClient(userId: string, ws: WebSocket) {
@@ -147,11 +150,12 @@ export class PaymentService {
     });
   }
 
-  async initiateDeposit(details: PaymentDetails) {
+  async initiateDeposit(details: PaymentDetails,token: { accessToken: string }) {
     const { amount, currency, userId, method } = details;
 
+
     if (method === 'mpesa') {
-      return await this.initiateMpesaDeposit(details);
+      return await this.initiateMpesaDeposit(details,token);
     } else if (method === 'paypal') {
       return await this.initiatePayPalDeposit(details);
     }
@@ -159,7 +163,7 @@ export class PaymentService {
     throw new Error('Unsupported payment method');
   }
 
-  async initiateWithdrawal(details: PaymentDetails) {
+  async initiateWithdrawal(details: PaymentDetails, token: { accessToken: string }) {
     const { amount, userId, method } = details;
 
     //Check  for user has sufficient balance
@@ -174,7 +178,7 @@ export class PaymentService {
     }
 
     if (method === 'mpesa') {
-      return await this.initiateMpesaWithdrawal(details);
+      return await this.initiateMpesaWithdrawal(details,token);
     } else if (method === 'paypal') {
       return await this.initiatePayPalWithdrawal(details);
     }
@@ -182,12 +186,14 @@ export class PaymentService {
     throw new Error('Unsupported withdrawal method');
   }
 
-  private async initiateMpesaDeposit(details: PaymentDetails) {
+  private async initiateMpesaDeposit(details: PaymentDetails,req: { accessToken: string } ) {
     const { amount, userId, phoneNumber } = details;
+
 
     const validatedPhone = await this.ensureValidPhoneNumber(userId, phoneNumber);
 
-
+    try {
+    let token= req.accessToken
     const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, '').slice(0, 14);
     const password = Buffer.from(
       `${this.mpesaConfig.shortcode}${this.mpesaConfig.passkey}${timestamp}`
@@ -196,18 +202,9 @@ export class PaymentService {
     const consumerKey = this.mpesaConfig.consumerKey;
     const consumerSecret = this.mpesaConfig.consumerSecret;
     const shortcode = this.mpesaConfig.shortcode;
-    console.log("consumerKey",consumerKey,"condumerSecret", consumerSecret);
-    try {
+    console.log("consumerKey", consumerKey, "condumerSecret", consumerSecret);
+    const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
 
-      const authResponse = await axios.get(
-        'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
-        {
-          auth: {
-            username: consumerKey,
-            password: consumerSecret
-          }
-        }
-      );
       const phone = validatedPhone.substring(4);
       console.log("phone", phone);
       const callbackUrl = this.mpesaConfig.callbackUrl;
@@ -222,15 +219,15 @@ export class PaymentService {
           TransactionType: 'CustomerPayBillOnline',
           Amount: amount,
           PartyA: phone,
-          PartyB: this.mpesaConfig.shortcode,
+          PartyB: shortcode,
           PhoneNumber: `254${phone}` || '0793043014',
-          CallBackURL: `${callbackUrl}/stk_callback`,
+          CallBackURL: "https://nodejs-mpesa-1.onrender.com/api",
           AccountReference: `Deposit-${userId}`,
           TransactionDesc: 'Game Deposit'
         },
         {
           headers: {
-        Authorization: `Bearer ${authResponse.data.access_token}`
+              Authorization: `Basic ${token}`
           }
         }
       );
@@ -276,26 +273,29 @@ export class PaymentService {
     }
   }
 
-  private async initiateMpesaWithdrawal(details: PaymentDetails) {
+  private async initiateMpesaWithdrawal(details: PaymentDetails, req: { accessToken: string }) {
       const { amount, userId, phoneNumber } = details;
 
     const validatedPhone = await this.ensureValidPhoneNumber(userId, phoneNumber);
 
 
     try {
+      let token= req.accessToken
       const securityCredential = Buffer.from(
         `${this.mpesaConfig.shortcode}${this.mpesaConfig.passkey}`
       ).toString('base64');
 
-      const authResponse = await axios.get(
-        'https://sandbox.safaricom.co.ke/oauth/v1/generate',
-        {
-          auth: {
-            username: this.mpesaConfig.consumerKey,
-            password: this.mpesaConfig.consumerSecret
-          }
-        }
-      );
+      const consumerKey = this.mpesaConfig.consumerKey;
+    const consumerSecret = this.mpesaConfig.consumerSecret;
+    const shortcode = this.mpesaConfig.shortcode;
+    console.log("consumerKey", consumerKey, "condumerSecret", consumerSecret);
+    const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
+
+      const phone = validatedPhone.substring(4);
+      console.log("phone", phone);
+      const callbackUrl = this.mpesaConfig.callbackUrl;
+      console.log("callbackUrl", callbackUrl);
+
 
       //Initiating  B2C payment for daraja sdk
       const response = await axios.post(
@@ -305,16 +305,16 @@ export class PaymentService {
           SecurityCredential: securityCredential,
           CommandID: 'BusinessPayment',
           Amount: amount,
-          PartyA: this.mpesaConfig.shortcode,
-          PartyB: validatedPhone,
+          PartyA: shortcode,
+          PartyB: `254${phone}` || '0793043014',
           Remarks: 'Game Withdrawal',
-          QueueTimeOutURL: `${this.mpesaConfig.callbackUrl}/timeout`,
-          ResultURL: `${this.mpesaConfig.callbackUrl}/result`,
+          QueueTimeOutURL: `https://nodejs-mpesa-1.onrender.com/api/timeout`,
+          ResultURL: `https://nodejs-mpesa-1.onrender.com/api/result`,
           Occasion: `Withdrawal-${userId}`
         },
         {
           headers: {
-            Authorization: `Bearer ${authResponse.data.access_token}`
+            Authorization: `Basic ${token}`
           }
         }
       );
